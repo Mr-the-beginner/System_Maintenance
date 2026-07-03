@@ -38,8 +38,8 @@ and run it
 ```
 
 >[!TIP]
-> It is advised to look at the script before executing it , just to know what will be deleted and/or exclude some paths that you may want to keep.
-> For Linux, pleaseeee dont do anything while updating, the script is so fragile , that when you do anything , even moving a file it can brake everything, didnt really have the skills yet for each edge case.
+> - It is advised to look at the script before executing it , just to know what will be deleted and/or exclude some paths that you may want to keep.
+> - For Linux, pleaseeee dont do anything while updating, the script is so fragile , that when you do anything , even moving a file it can brake everything, didnt really have the skills yet for each edge case.
 
 
 > [!CAUTION]
