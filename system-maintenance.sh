@@ -38,6 +38,8 @@ PKG_TOTAL=0
 HAS_FAILED=0
 ABORTED=0
 CURRENT_CMD_PID=""
+RENDER_PID=""
+SUDO_KEEPALIVE_PID=""
 
 fmt_time() {
   local s=$1
@@ -170,6 +172,16 @@ renderer() {
   done
 }
 
+# If the cached sudo ticket has expired, the keepalive's `sudo -n true`
+# fails silently (that's what -n does), and the *next* real `sudo` call
+# inside run_step would try to prompt for a password on a backgrounded,
+# log-redirected process -- which can never receive it, so it just hangs.
+# Guard against that by checking before every privileged step and, if the
+# ticket is gone, pausing the dashboard so the password prompt is visible.
+ensure_sudo() {
+    sudo -n true 2>/dev/null || sudo -v
+}
+
 run_step() {
   local idx=$1; shift
   CURRENT_IDX=$idx
@@ -177,6 +189,7 @@ run_step() {
   STATUS_ARR[$idx]="running"
   PKG_CUR=0; PKG_TOTAL=0
   write_state
+  ensure_sudo
 
   local logsize_before
   logsize_before=$(wc -l < "$LOGFILE" 2>/dev/null || echo 0)
@@ -216,6 +229,13 @@ run_step() {
   wait "$cmd_pid"
   local rc=$?
   CURRENT_CMD_PID=""
+
+# --- hard-fail detection for apt update ---
+  if [ "$idx" -eq 0 ]; then
+    if tail -n +"$((logsize_before + 1))" "$LOGFILE" | grep -Eq '^(W: Failed to fetch|Err:)'; then
+      rc=1
+    fi
+  fi
 
   if [ "$rc" -eq 0 ]; then
     STATUS_ARR[$idx]="done"
